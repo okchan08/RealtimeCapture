@@ -1,0 +1,4 @@
+[Realtime_capture-00-00-01.bit]
+Axi DataMover and Software worked.
+
+
