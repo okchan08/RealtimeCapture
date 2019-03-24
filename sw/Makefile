@@ -1,5 +1,5 @@
 CC = g++
-CFLGAGS = -std=c++11
+CFLAGS = -std=c++11
 LDFLAGS = 
 LIBS = 
 INCLUDE = -I ./include

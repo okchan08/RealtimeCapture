@@ -20,9 +20,10 @@ void memdump(unsigned long long* virtual_address, int byte_count){
 
 DataCapture::DataCapture()
     :m_length(512),
-     m_addr(DEST_ADDR)
-
+     m_addr(DEST_ADDR),
+     m_dest_length(m_length)
 {
+    m_capture_data.resize(m_dest_length);
     fd_uio = open(DEFAULT_CAPTURE_FILE, O_RDWR | O_SYNC);
     if(fd_uio < 0){
         perror("open");
@@ -43,23 +44,22 @@ DataCapture::DataCapture()
         std::cout << "Failed to open " << DEFAULT_CAPTURE_FILE << std::endl;
     }
     
-    data = (unsigned long long*)mmap(NULL, DEST_SIZE, PROT_READ | PROT_WRITE, 
-                                                 MAP_SHARED, fd_mem, DEST_ADDR);
+    data = (unsigned long long*)mmap(NULL, m_dest_length, PROT_READ | PROT_WRITE, 
+                                                 MAP_SHARED, fd_mem, m_addr);
     if(data == MAP_FAILED){
         perror("mmap");
         std::cout << "Failed to mmap:  data" << std::endl;
     }
 
-    close(fd_mem);
-    
-    setLength(2048*2);
-    setDestinationAddress(DEST_ADDR);
+    setLength(m_length);
+    setDestinationAddress(m_addr);
 
 }
 
 DataCapture::~DataCapture(){
     munmap(command, CAPTURE_BLOCK_SIZE);
-    munmap(data, DEST_SIZE);
+    munmap(data, m_dest_length);
+    close(fd_mem);
 }
 
 void DataCapture::showCommandList(void){
@@ -91,10 +91,20 @@ int DataCapture::axiGetValue(void *addr, int offset){
 }
 
 void DataCapture::setLength(int length){
+    munmap(data,m_dest_length);
     m_length = length;
+    m_dest_length = m_length;
+    m_capture_data.resize(m_dest_length);
+    data = (unsigned long long*)mmap(NULL, m_dest_length, PROT_READ | PROT_WRITE, 
+                                                 MAP_SHARED, fd_mem, m_addr);
+    if(data == MAP_FAILED){
+        perror("mmap");
+        std::cout << "Failed to mmap:  data" << std::endl;
+    }
     sendCommand("reset");
     sendCommand("halt");
     sendCommand("length");
+    sendCommand("halt");
 }
 
 void DataCapture::setDestinationAddress(int addr){
@@ -102,20 +112,19 @@ void DataCapture::setDestinationAddress(int addr){
     sendCommand("reset");
     sendCommand("halt");
     sendCommand("dest");
+    sendCommand("halt");
 }
 
-void DataCapture::runCapture(void){
+std::vector<unsigned long long> DataCapture::runCapture(void){
     sendCommand("run");
     while(true){
         if(axiGetValue(command, CAPTURE_DMSTS) & 0x80) break;
     }
     sendCommand("reset");
     sendCommand("halt");
-    //cout << "Status:  0x" << hex << get_value(axi_capture_addr,CAPTURE_DMSTS)
-    //     << "    Trans:  0x" << get_value(axi_capture_addr, CAPTURE_TRANS)
-    //     << "    Last :  0x" << get_value(axi_capture_addr, CAPTURE_LAST_ADDR) 
-    //     << "    Size :  0x" << get_value(axi_capture_addr, CAPTURE_SIZE) << endl;
-    //cout << "---- DMA result ----" << endl << endl;
-    memdump(data, 512);
-    //cout << "---- end ----" << endl << endl;
+
+    for(int i=0;i<m_dest_length;i++){
+        m_capture_data[i] = data[i];
+    }
+    return m_capture_data;
 }

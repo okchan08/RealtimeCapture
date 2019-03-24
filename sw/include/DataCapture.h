@@ -2,6 +2,7 @@
 #define DATACAPTURE_H
 
 #include <iostream>
+#include <vector>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,8 +32,9 @@ class DataCapture{
         DataCapture();
         ~DataCapture();
         void sendCommand(const char* cmd);
+        void setLength(int length);
         int getStatus(std::string &cmd);
-        void runCapture(void);
+        std::vector<unsigned long long> runCapture(void);
         
 
     private:
@@ -42,13 +44,15 @@ class DataCapture{
         int fd_uio, fd_mem;
         int m_length;
         int m_addr;
+        unsigned long long m_dest_length;
         
         void showCommandList(void);
         void axiSendCommand(void*, int offset, int value);
         int  axiGetValue(void*, int);
 
-        void setLength(int length);
         void setDestinationAddress(int addr);
+    
+        std::vector<unsigned long long> m_capture_data;
         
         
 };
