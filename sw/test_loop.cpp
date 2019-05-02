@@ -1,6 +1,7 @@
 #include <limits>		// std::numeric_limits
 #include <stdexcept>	// std::runtime_error
 #include <iostream>
+#include <list>
 
 #include <string>		// std::string
 #include <stdio.h>		// sprintf
@@ -11,6 +12,9 @@
 
 #include <libwebsockets.h>
 #include <uv.h>
+#include "WebsocketBuffer.h"
+
+std::list<WebsocketBuffer*> connections;
 
 int callback_http( struct lws *wsi, enum lws_callback_reasons reason,
                    void *user, void*in, size_t len){
@@ -27,6 +31,8 @@ int callback_http( struct lws *wsi, enum lws_callback_reasons reason,
 int callback_test( struct lws *wsi, enum lws_callback_reasons reason,
                    void *user, void *in, size_t len){
     switch(reason){
+        case LWS_CALLBACK_ESTABLISHED:
+            connections.push_front(new WebsocketBuffer(wsi));
         case LWS_CALLBACK_RECEIVE:
             std::cout << "callback receive" << std::endl;
             break;

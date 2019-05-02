@@ -22,8 +22,12 @@ DEPENDS = $(OBJS:$(OBJ_SUF)=$(DIP_SUF))
 
 all: $(TARGETBIN)
 
-web:
-	g++ -std=c++11 -g3 test_loop.cpp -I./include $(shell pkg-config --libs --cflags libwebsockets) -luv
+web: server client
+
+server: server.c
+	g++ -g -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
+client: client.c
+	g++ -g -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
 
 
 
