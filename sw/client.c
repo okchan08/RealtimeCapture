@@ -29,25 +29,20 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 		case LWS_CALLBACK_CLIENT_WRITEABLE:
 		{
 			unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + EXAMPLE_RX_BUFFER_LENGTH + LWS_SEND_BUFFER_POST_PADDING];
-			unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
-            unsigned char *start = p;
-            memset(start, 0, EXAMPLE_RX_BUFFER_LENGTH);
-            size_t length = 0;
-            for(unsigned int i=0;i<EXAMPLE_RX_BUFFER_LENGTH;i++) {
-                //size_t n = sprintf((char)&p[i], "%u", i);
-                //count++;
-                //std::cout << "n = " << n << std::endl;
-                //length += n;
-                length += sprintf((char*)p, "%c", 'a');
-                p++;
-            }
-            //for(int i=0;i<10;i++){
+			//unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
+            //unsigned char *start = p;
+            //memset(start, 0, EXAMPLE_RX_BUFFER_LENGTH);
+            //size_t length = 0;
+            //for(unsigned int i=0;i<EXAMPLE_RX_BUFFER_LENGTH;i++) {
             //    length += sprintf((char*)p, "%c", 'a');
             //    p++;
             //}
-			//lws_write( wsi, p, n, LWS_WRITE_TEXT );
-            std::cout << "length = " << length << std::endl;
-            lws_write(wsi, start, length, LWS_WRITE_TEXT);
+            //std::cout << "length = " << length << std::endl;
+            memset(&buf[LWS_SEND_BUFFER_PRE_PADDING], 0, EXAMPLE_RX_BUFFER_LENGTH);
+            uint8_t uint8_buf[128]; memset(uint8_buf, 0, 128);
+            sprintf((char*)uint8_buf, "%s:%u", "sample", rand());
+            memcpy(&buf[LWS_SEND_BUFFER_PRE_PADDING], uint8_buf, 128);
+            lws_write(wsi, &buf[LWS_SEND_BUFFER_PRE_PADDING], EXAMPLE_RX_BUFFER_LENGTH, LWS_WRITE_BINARY);
 			break;
 		}
 
@@ -113,12 +108,11 @@ int main( int argc, char *argv[] )
 			web_socket = lws_client_connect_via_info(&ccinfo);
 		}
 
-		if( tv.tv_usec/1000 != old )
+		if( tv.tv_sec != old )
 		{
 			/* Send a random number to the server every second. */
 			lws_callback_on_writable( web_socket );
-			//old = tv.tv_sec;
-            old = tv.tv_usec/1000;
+			old = tv.tv_sec;
 		}
 
 		lws_service( context, /* timeout_ms = */ 250 );
