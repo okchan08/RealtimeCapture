@@ -4,15 +4,31 @@
 #include <stdlib.h>
 
 #include <iostream>
+#include <vector>
 
 unsigned int count = 0;
 static struct lws *web_socket = NULL;
 
-#define EXAMPLE_RX_BUFFER_LENGTH (512)
+#define EXAMPLE_RX_BUFFER_LENGTH (512 * 4)
+#define LENGTH (16)
 
 struct per_session_example{
     unsigned char data[EXAMPLE_RX_BUFFER_LENGTH];
 };
+
+template<class T>
+std::vector<T> generateData(){
+    std::vector<T> ret(LENGTH);
+    for(int i=0;i<LENGTH;i++){
+        ret.at(i) = i;
+    }
+    return ret;
+}
+
+template<class T>
+int getVectorLengthInUint8(const std::vector<T> &vec) {
+    return vec.size() * sizeof(T);
+}
 
 static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
@@ -37,11 +53,22 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
             //    length += sprintf((char*)p, "%c", 'a');
             //    p++;
             //}
-            //std::cout << "length = " << length << std::endl;
+            char name[128];
+            memset(name, 0, 128);
+            sprintf(name, "%s", "sample string");
+            auto data0 = generateData<uint8_t>();
+            auto data1 = generateData<uint16_t>();
+            auto data2 = generateData<uint32_t>();
             memset(&buf[LWS_SEND_BUFFER_PRE_PADDING], 0, EXAMPLE_RX_BUFFER_LENGTH);
-            uint8_t uint8_buf[128]; memset(uint8_buf, 0, 128);
-            sprintf((char*)uint8_buf, "%s:%u", "sample", rand());
-            memcpy(&buf[LWS_SEND_BUFFER_PRE_PADDING], uint8_buf, 128);
+            uint8_t uint8_buf[EXAMPLE_RX_BUFFER_LENGTH]; memset(uint8_buf, 0, EXAMPLE_RX_BUFFER_LENGTH);
+            int writtenBytes = 0;
+            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data0[0], data0.size()); writtenBytes += getVectorLengthInUint8(data0);
+            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data1[0], getVectorLengthInUint8(data1)); writtenBytes += getVectorLengthInUint8(data1);
+            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data2[0], getVectorLengthInUint8(data2)); writtenBytes += getVectorLengthInUint8(data2);
+
+            memcpy(&uint8_buf[writtenBytes], (uint8_t*)name, strlen(name)); writtenBytes += strlen(name);
+
+            memcpy(&buf[LWS_SEND_BUFFER_PRE_PADDING], uint8_buf, EXAMPLE_RX_BUFFER_LENGTH);
             lws_write(wsi, &buf[LWS_SEND_BUFFER_PRE_PADDING], EXAMPLE_RX_BUFFER_LENGTH, LWS_WRITE_BINARY);
 			break;
 		}
@@ -99,7 +126,8 @@ int main( int argc, char *argv[] )
 		{
 			struct lws_client_connect_info ccinfo = {0};
 			ccinfo.context = context;
-			ccinfo.address = "192.168.0.4";
+			//ccinfo.address = "192.168.0.4";
+			ccinfo.address = "127.0.0.1";
 			ccinfo.port = 7100;
 			ccinfo.path = "/";
 			ccinfo.host = lws_canonical_hostname( context );

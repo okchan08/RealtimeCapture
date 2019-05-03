@@ -1,5 +1,5 @@
 var EXAMPLE_RX_BUFFER_LENGTH = 512; // byte
-var DEFAULT_DOMAIN = "192.168.0.4";
+var DEFAULT_DOMAIN = "127.0.0.1";
 var DEFAULT_PORT = 7100;
 
 var ws = new WebSocket("ws://" + DEFAULT_DOMAIN + ":" + DEFAULT_PORT, "example-protocol");
@@ -17,14 +17,23 @@ function stringOfUint8Array(u8){
     return ret;
 }
 
-function update_data(e_data){
-    var h16 = new Uint16Array(e_data,0,2);
-    var data0 = h16[0];
-    var data1 = h16[1];
-    var h8 = new Uint8Array(e_data, 2*2, EXAMPLE_RX_BUFFER_LENGTH);
+function arrayToStringMessage(data){
+    var ret = "";
+    for(i=0;i<data.length;i++){
+        var x = data[i] + '';
+        ret += x + " ";
+    }
+    return ret;
+}
 
-    var moji = new stringOfUint8Array(h8);
-    return [data0, data1, moji];
+function update_data(e_data){
+    var h8 = new Uint8Array(e_data, 0, 16);
+    var h16 = new Uint16Array(e_data, 16, 16);
+    var h32 = new Uint32Array(e_data, 16 + 16*2, 16);
+    var nameH8 = new Uint8Array(e_data, 16 + 16*2 + 16*4, 128);
+
+    var moji = stringOfUint8Array(nameH8);
+    return [h8, h16, h32, moji];
 }
 
 function update_test(e_data){
@@ -43,8 +52,14 @@ ws.onmessage = function(e){
     if(typeof e.data === "string"){
         console.log(e);
     } else {
-        var message = update_test(e.data);
-        console.log("socket data: " + message);
+        console.log(e);
+        var[h8, h16, h32, message] = update_data(e.data);
+        var h8String = arrayToStringMessage(h8);
+        var h16String = arrayToStringMessage(h16);
+        var h32String = arrayToStringMessage(h32);
         document.getElementById("num").innerHTML = message;
+        document.getElementById("h8").innerHTML = h8String;
+        document.getElementById("h16").innerHTML = h16String;
+        document.getElementById("h32").innerHTML = h32String;
     }
 }

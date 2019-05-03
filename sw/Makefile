@@ -24,10 +24,12 @@ all: $(TARGETBIN)
 
 web: server client
 
-server: server.c
-	g++ -g -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
-client: client.c
-	g++ -g -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
+server: server.cpp
+	#g++ -g -Wall $(shell pkg-config libwebsockets --libs --cflags) $< -o $@
+	g++ -g -Wall -std=c++11 -I/usr/local/include -L/usr/local/lib -lwebsockets $< -o $@
+client: client.cpp
+	#g++ -g -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
+	g++ -g -Wall -std=c++11 -I/usr/local/include -L/usr/local/lib -lwebsockets $< -o $@
 
 
 
