@@ -2,13 +2,18 @@
 <html>
 <title>"test"</title>
 <head>
-    <script type="text/javascript" src="index.js"></script>
+    <meta charset="UTF-8">
 </head>
-<body>
+<body onLoad="init_canvas()">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@latest/dist/chartjs-plugin-streaming.min.js"></script>
+    <script type="text/javascript" src="index.js"></script>
     <h1>This is test</h1>
     <p id="h8"></p>
     <p id="h16"></p>
     <p id="h32"></p>
     <p id="num"></p>
+    <canvas id="sample"></canvas>
 </body>
 </html>
