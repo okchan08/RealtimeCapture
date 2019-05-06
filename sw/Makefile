@@ -25,11 +25,9 @@ all: $(TARGETBIN)
 web: server client
 
 server: server.cpp
-	#g++ -g -Wall $(shell pkg-config libwebsockets --libs --cflags) $< -o $@
-	g++ -g -Wall -std=c++11 -I/usr/local/include -L/usr/local/lib -lwebsockets $< -o $@
+	g++ -g -std=c++11 -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
 client: client.cpp
-	#g++ -g -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
-	g++ -g -Wall -std=c++11 -I/usr/local/include -L/usr/local/lib -lwebsockets $< -o $@
+	g++ -g -std=c++11 -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
 
 
 

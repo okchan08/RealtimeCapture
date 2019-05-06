@@ -1,5 +1,6 @@
 var EXAMPLE_RX_BUFFER_LENGTH = 512; // byte
-var DEFAULT_DOMAIN = "127.0.0.1";
+//var DEFAULT_DOMAIN = "127.0.0.1";
+var DEFAULT_DOMAIN = "192.168.0.4";
 var DEFAULT_PORT = 7100;
 
 var ws = new WebSocket("ws://" + DEFAULT_DOMAIN + ":" + DEFAULT_PORT, "example-protocol");
@@ -20,12 +21,17 @@ function init_canvas(){
                 datasets: [{
                     label:'temp data',
                     data: [],
+                    backgroundColor: 'rgba(255,0,0, 0)',
+                    borderColor: 'rgba(255,0,0,1)',
                 }]
             },
                 options: {
                     elements: {
                         line: {
-                            tension: 0
+                            tension: 0,
+                        },
+                        point:{
+                            radius: 0
                         }
                     },
                     scales: {
@@ -39,11 +45,14 @@ function init_canvas(){
                         yAxes: [{
                             ticks:{
                                 beginAtZero: true,
-                                min: 0,
-                                max: 12
+                                min: -10,
+                                max: 50 
                             }
                         }]
-                    }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: false
                 } 
             });
         for(i=0;i<100;++i){
@@ -103,7 +112,7 @@ function drawChart(){
         data_x.push(i);
         //data_y.push(getRandomInt(0,10));
         data_y.push(i);
-        chart.data.datasets[0].data[i] = getRandomInt(0,10);
+        chart.data.datasets[0].data[i] = getRandomInt(-10,10);
     }
     chart.update();
 }
@@ -116,7 +125,7 @@ ws.onmessage = function(e){
     if(typeof e.data === "string"){
         console.log(e);
     } else {
-        console.log(e);
+        //console.log(e);
         var[h8, h16, h32, message] = update_data(e.data);
         var h8String = arrayToStringMessage(h8);
         var h16String = arrayToStringMessage(h16);

@@ -126,8 +126,8 @@ int main( int argc, char *argv[] )
 		{
 			struct lws_client_connect_info ccinfo = {0};
 			ccinfo.context = context;
-			//ccinfo.address = "192.168.0.4";
-			ccinfo.address = "127.0.0.1";
+			ccinfo.address = "192.168.0.4";
+			//ccinfo.address = "127.0.0.1";
 			ccinfo.port = 7100;
 			ccinfo.path = "/";
 			ccinfo.host = lws_canonical_hostname( context );
@@ -136,10 +136,13 @@ int main( int argc, char *argv[] )
 			web_socket = lws_client_connect_via_info(&ccinfo);
 		}
 
+        usleep(50 * 1000);
+		lws_callback_on_writable( web_socket );
+        
 		if( tv.tv_sec != old )
 		{
 			/* Send a random number to the server every second. */
-			lws_callback_on_writable( web_socket );
+			//lws_callback_on_writable( web_socket );
 			old = tv.tv_sec;
 		}
 

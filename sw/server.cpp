@@ -35,7 +35,6 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 		case LWS_CALLBACK_RECEIVE:
 			memcpy( &received_payload.data[LWS_SEND_BUFFER_PRE_PADDING], in, len );
             received_payload.len = len;
-            std::cout << "length = " << len << std::endl;
 			lws_callback_on_writable_all_protocol( lws_get_context( wsi ), lws_get_protocol( wsi ) );
 			break;
 
