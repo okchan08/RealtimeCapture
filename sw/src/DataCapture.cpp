@@ -18,47 +18,64 @@ void memdump(unsigned long long* virtual_address, int byte_count){
     }
 }
 
-DataCapture::DataCapture()
-    :m_length(512),
+DataCapture::DataCapture(size_t data_length, unsigned int dest_addr)
+    :m_length(data_length),
      m_addr(DEST_ADDR),
-     m_dest_length(m_length)
+     m_dest_length(data_length)
 {
-    m_capture_data.resize(m_dest_length);
+    m_capture_data.resize(data_length);
+    int fd_uio, fd_mem;
     fd_uio = open(DEFAULT_CAPTURE_FILE, O_RDWR | O_SYNC);
     if(fd_uio < 0){
         perror("open");
-        std::cout << "Failed to open " << DEFAULT_CAPTURE_FILE << std::endl;
     }
 
-    command = mmap(NULL, CAPTURE_BLOCK_SIZE, PROT_READ | PROT_WRITE, 
-                                                            MAP_SHARED, fd_uio, 0);
+    command = mmap(NULL, CAPTURE_BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_uio, 0);
     if(command == MAP_FAILED){
         perror("mmap");
-        std::cout << "Failed to mmap:  command" << std::endl;
     }
+
     close(fd_uio);
+
+    /////////////////////////////////////
 
     fd_mem = open("/dev/mem", O_RDWR | O_SYNC);
     if(fd_mem < 0){
         perror("open");
-        std::cout << "Failed to open " << DEFAULT_CAPTURE_FILE << std::endl;
     }
     
-    data = (unsigned long long*)mmap(NULL, m_dest_length, PROT_READ | PROT_WRITE, 
-                                                 MAP_SHARED, fd_mem, m_addr);
+    data = mmap(NULL, CAPTURE_BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_mem, DEST_ADDR);
     if(data == MAP_FAILED){
-        perror("mmap");
-        std::cout << "Failed to mmap:  data" << std::endl;
+        perror("mmap"); 
     }
 
-    setLength(m_length);
-    setDestinationAddress(m_addr);
+    close(fd_mem);
 
+    int length = 2048*2;
+
+    memset((void*)data, 0, 128);
+    //memdump((void*)data, 512);
+
+    axiSendCommand(command, CAPTURE_RSVD, 0x1234);
+    std::cout << "RSVD:  " << std::hex << axiGetValue(command, CAPTURE_RSVD) << std::endl;
+
+    axiSendCommand(command, CAPTURE_CTRL, 0x4);
+    std::cout << "CTRL:  " << std::hex << axiGetValue(command, CAPTURE_CTRL) << std::endl;
+
+
+    axiSendCommand(command, CAPTURE_CTRL, 0x0);
+    std::cout << "CTRL:  " << std::hex << axiGetValue(command, CAPTURE_CTRL) << std::endl;
+
+    axiSendCommand(command, CAPTURE_SIZE, length);
+    std::cout << "SIZE:  " << std::hex << axiGetValue(command, CAPTURE_SIZE) << std::endl;
+
+    axiSendCommand(command, CAPTURE_START_ADDR, DEST_ADDR);
+    std::cout << "DEST:  " << std::hex << axiGetValue(command, CAPTURE_START_ADDR) << std::endl;
 }
 
 DataCapture::~DataCapture(){
     munmap(command, CAPTURE_BLOCK_SIZE);
-    munmap(data, m_dest_length);
+    munmap(data, CAPTURE_BLOCK_SIZE);
     close(fd_mem);
 }
 
@@ -75,6 +92,8 @@ void DataCapture::sendCommand(const char* cmd){
         axiSendCommand(command, CAPTURE_CTRL, 0x1);
     }else if(cmd == "length"){
         axiSendCommand(command, CAPTURE_SIZE, m_length);   
+        std::cout << "size init." << std::endl;
+        std::cout << axiGetValue(command, CAPTURE_SIZE) << std::endl;
     }else if(cmd == "dest"){
         axiSendCommand(command, CAPTURE_START_ADDR, m_addr);
     }else{
@@ -82,29 +101,29 @@ void DataCapture::sendCommand(const char* cmd){
     }
 }
 
-void DataCapture::axiSendCommand(void* addr, int offset, int value){
-    ((unsigned int*)addr)[offset] = value;
+void DataCapture::axiSendCommand(volatile void* address, int unsigned offset, unsigned int value){
+    ((unsigned int*)address)[offset] = value;
 }
 
-int DataCapture::axiGetValue(void *addr, int offset){
-    return ((unsigned int*) addr)[offset];
+unsigned int DataCapture::axiGetValue(volatile void* address, unsigned int offset){
+    return ((unsigned int*) address)[offset];
 }
 
 void DataCapture::setLength(int length){
-    munmap(data,m_dest_length);
-    m_length = length;
-    m_dest_length = m_length;
-    m_capture_data.resize(m_dest_length);
-    data = (unsigned long long*)mmap(NULL, m_dest_length, PROT_READ | PROT_WRITE, 
-                                                 MAP_SHARED, fd_mem, m_addr);
-    if(data == MAP_FAILED){
-        perror("mmap");
-        std::cout << "Failed to mmap:  data" << std::endl;
-    }
-    sendCommand("reset");
-    sendCommand("halt");
-    sendCommand("length");
-    sendCommand("halt");
+    //munmap(data,MMAP_SIZE_TEMP);
+    //m_length = length;
+    //m_dest_length = m_length;
+    //m_capture_data.resize(m_dest_length);
+    ////data = (unsigned long long*)mmap(NULL, MMAP_SIZE_TEMP, PROT_READ | PROT_WRITE, 
+    ////                                                MAP_SHARED, fd_mem, m_addr);
+    //if(data == MAP_FAILED){
+    //    perror("mmap");
+    //    std::cout << "Failed to mmap:  data" << std::endl;
+    //}
+    //sendCommand("reset");
+    //sendCommand("halt");
+    //sendCommand("length");
+    //sendCommand("halt");
 }
 
 void DataCapture::setDestinationAddress(int addr){
@@ -116,15 +135,16 @@ void DataCapture::setDestinationAddress(int addr){
 }
 
 std::vector<unsigned long long> DataCapture::runCapture(void){
-    sendCommand("run");
+    axiSendCommand(command, CAPTURE_CTRL, 0x1);
     while(true){
         if(axiGetValue(command, CAPTURE_DMSTS) & 0x80) break;
     }
-    sendCommand("reset");
-    sendCommand("halt");
+    axiSendCommand(command, CAPTURE_CTRL, 0x4);
+    axiSendCommand(command, CAPTURE_CTRL, 0x0);
+    memdump((unsigned long long*)data, 512);
+    std::cout << "---- end ----" << std::endl << std::endl;
+    unsigned long long* tmp = (unsigned long long*)data;
+    for(int i=0;i<m_length;i++) m_capture_data.at(i) = tmp[i];
 
-    for(int i=0;i<m_dest_length;i++){
-        m_capture_data[i] = data[i];
-    }
     return m_capture_data;
 }

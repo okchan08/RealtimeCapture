@@ -29,7 +29,7 @@
 #define DEFAULT_CAPTURE_FILE  "/dev/uio0"
 class DataCapture{
     public:
-        DataCapture();
+        DataCapture(size_t length, unsigned int dest_addr);
         ~DataCapture();
         void sendCommand(const char* cmd);
         void setLength(int length);
@@ -38,17 +38,18 @@ class DataCapture{
         
 
     private:
-        unsigned long long* data;
+        void* data;
         void*  command;
         
         int fd_uio, fd_mem;
         int m_length;
-        int m_addr;
+        unsigned int m_addr;
         unsigned long long m_dest_length;
         
         void showCommandList(void);
-        void axiSendCommand(void*, int offset, int value);
-        int  axiGetValue(void*, int);
+    
+        void axiSendCommand(volatile void* address, int unsigned offset, unsigned int value);
+        unsigned int axiGetValue(volatile void* address, unsigned int offset);
 
         void setDestinationAddress(int addr);
     

@@ -6,10 +6,12 @@
 #include <iostream>
 #include <vector>
 
+#include "DataCapture.h"
+
 unsigned int count = 0;
 static struct lws *web_socket = NULL;
 
-#define EXAMPLE_RX_BUFFER_LENGTH (512 * 4)
+#define EXAMPLE_RX_BUFFER_LENGTH (2048)
 #define LENGTH (16)
 
 struct per_session_example{
@@ -29,6 +31,8 @@ template<class T>
 int getVectorLengthInUint8(const std::vector<T> &vec) {
     return vec.size() * sizeof(T);
 }
+
+DataCapture dc(128,0);
 
 static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
@@ -56,19 +60,23 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
             char name[128];
             memset(name, 0, 128);
             sprintf(name, "%s", "sample string");
-            auto data0 = generateData<uint8_t>();
-            auto data1 = generateData<uint16_t>();
-            auto data2 = generateData<uint32_t>();
+            //auto data0 = generateData<uint8_t>();
+            //auto data1 = generateData<uint16_t>();
+            //auto data2 = generateData<uint32_t>();
             memset(&buf[LWS_SEND_BUFFER_PRE_PADDING], 0, EXAMPLE_RX_BUFFER_LENGTH);
             uint8_t uint8_buf[EXAMPLE_RX_BUFFER_LENGTH]; memset(uint8_buf, 0, EXAMPLE_RX_BUFFER_LENGTH);
             int writtenBytes = 0;
-            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data0[0], data0.size()); writtenBytes += getVectorLengthInUint8(data0);
-            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data1[0], getVectorLengthInUint8(data1)); writtenBytes += getVectorLengthInUint8(data1);
-            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data2[0], getVectorLengthInUint8(data2)); writtenBytes += getVectorLengthInUint8(data2);
+            //memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data0[0], data0.size()); writtenBytes += getVectorLengthInUint8(data0);
+            //memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data1[0], getVectorLengthInUint8(data1)); writtenBytes += getVectorLengthInUint8(data1);
 
-            memcpy(&uint8_buf[writtenBytes], (uint8_t*)name, strlen(name)); writtenBytes += strlen(name);
+            //memcpy(&uint8_buf[writtenBytes], (uint8_t*)name, strlen(name)); writtenBytes += strlen(name);
+            //memcpy(&uint8_buf[writtenBytes], (uint8_t*)&data2[0], getVectorLengthInUint8(data2)); writtenBytes += getVectorLengthInUint8(data2);
+            auto vec = dc.runCapture();
+            fprintf(stdout, "%d\n", vec.size());
+            memcpy(&uint8_buf[writtenBytes], (uint8_t*)&vec[0], getVectorLengthInUint8(vec)); writtenBytes += getVectorLengthInUint8(vec);
 
             memcpy(&buf[LWS_SEND_BUFFER_PRE_PADDING], uint8_buf, EXAMPLE_RX_BUFFER_LENGTH);
+
             lws_write(wsi, &buf[LWS_SEND_BUFFER_PRE_PADDING], EXAMPLE_RX_BUFFER_LENGTH, LWS_WRITE_BINARY);
 			break;
 		}
@@ -105,6 +113,8 @@ static struct lws_protocols protocols[] =
 
 int main( int argc, char *argv[] )
 {
+
+    dc.setLength(64);
 	struct lws_context_creation_info info;
 	memset( &info, 0, sizeof(info) );
 

@@ -17,7 +17,7 @@ function init_canvas(){
         chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: new Array(100),
+                labels: [],
                 datasets: [{
                     label:'temp data',
                     data: [],
@@ -45,8 +45,8 @@ function init_canvas(){
                         yAxes: [{
                             ticks:{
                                 beginAtZero: true,
-                                min: -10,
-                                max: 50 
+                                //min: -10,
+                                max: 20000 
                             }
                         }]
                     },
@@ -55,8 +55,8 @@ function init_canvas(){
                     animation: false
                 } 
             });
-        for(i=0;i<100;++i){
-            chart.data.datasets[0].data.push(0);
+        for(i=0;i<128*2;++i){
+            chart.data.labels.push(i);
         }
     }
 }
@@ -83,13 +83,17 @@ function arrayToStringMessage(data){
 }
 
 function update_data(e_data){
-    var h8 = new Uint8Array(e_data, 0, 16);
-    var h16 = new Uint16Array(e_data, 16, 16);
-    var h32 = new Uint32Array(e_data, 16 + 16*2, 16);
-    var nameH8 = new Uint8Array(e_data, 16 + 16*2 + 16*4, 128);
+    //var nameH8 = new Uint8Array(e_data, 0, 128);
+    var h32 = new Uint32Array(e_data, 0, 128*2);
 
-    var moji = stringOfUint8Array(nameH8);
-    return [h8, h16, h32, moji];
+    var data = [];
+    for(i=0;i<h32.length;i+=2){
+        data.push(h32[i]);
+    }
+
+    //var moji = stringOfUint8Array(nameH8);
+    var moji = "";
+    return [moji, data];
 }
 
 function getRandomInt(min, max) {
@@ -104,15 +108,10 @@ function copy_data(dst_data, length, src_data){
     }
 }
 
-function drawChart(){
-    var data_x = [];
-    var data_y = [];
-    var length = 100;
-    for(i=0;i<length;++i){
-        data_x.push(i);
-        //data_y.push(getRandomInt(0,10));
-        data_y.push(i);
-        chart.data.datasets[0].data[i] = getRandomInt(-10,10);
+function drawChart(input){
+    for(i=0;i<input.length;++i){ // from Uint32Array to 64bit integer
+        //chart.data.datasets[0].data[i] = getRandomInt(-10,10);
+        chart.data.datasets[0].data[i] = input[i];
     }
     chart.update();
 }
@@ -121,18 +120,15 @@ ws.onopen = function() { console.log("socket open");};
 ws.onclose = function() { console.log("socket closed");};
 
 ws.onmessage = function(e){
-    drawChart();
     if(typeof e.data === "string"){
         console.log(e);
     } else {
-        //console.log(e);
-        var[h8, h16, h32, message] = update_data(e.data);
-        var h8String = arrayToStringMessage(h8);
-        var h16String = arrayToStringMessage(h16);
-        var h32String = arrayToStringMessage(h32);
-        document.getElementById("num").innerHTML = message;
-        document.getElementById("h8").innerHTML = h8String;
-        document.getElementById("h16").innerHTML = h16String;
-        document.getElementById("h32").innerHTML = h32String;
+        console.log(e);
+        var[message, h32] = update_data(e.data);
+        drawChart(h32);
+        //document.getElementById("num").innerHTML = message;
+        //document.getElementById("h8").innerHTML = h8String;
+        //document.getElementById("h16").innerHTML = h16String;
+        //document.getElementById("h32").innerHTML = h32String;
     }
 }

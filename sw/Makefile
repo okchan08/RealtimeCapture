@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++11
+CFLAGS = -std=c++11 -g
 LDFLAGS = 
 LIBS = 
 INCLUDE = -I ./include
@@ -24,10 +24,10 @@ all: $(TARGETBIN)
 
 web: server client
 
-server: server.cpp
-	g++ -g -std=c++11 -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
-client: client.cpp
-	g++ -g -std=c++11 -Wall $< -o $@ $(shell pkg-config libwebsockets --libs --cflags)
+server: server.cpp src/DataCapture.cpp
+	g++ -g -std=c++11 -Wall $< -o $@ ./obj/DataCapture.o $(shell pkg-config libwebsockets --libs --cflags) -I./include
+client: client.cpp src/DataCapture.cpp
+	g++ -g -std=c++11 -Wall $< -o $@ ./obj/DataCapture.o $(shell pkg-config libwebsockets --libs --cflags) -I./include
 
 
 

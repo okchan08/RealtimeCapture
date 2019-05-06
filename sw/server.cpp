@@ -6,7 +6,7 @@
 #include <iostream>
 
 #define EXAMPLE_RX_BUFFER_BYTES (10)
-#define EXAMPLE_RX_BUFFER_LENGTH (512 * 4)
+#define EXAMPLE_RX_BUFFER_LENGTH (2048)
 
 struct payload
 {
