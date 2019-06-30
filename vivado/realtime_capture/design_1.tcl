@@ -41,7 +41,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 # project, but make sure you do not have an existing project
 # <./myproj/project_1.xpr> in the current working folder.
 
-set project_name "dma_test"
+set project_name "realtime_capture"
 set project_dir "proj"
 set origin_dir "."
 set list_projs [get_projects -quiet]
